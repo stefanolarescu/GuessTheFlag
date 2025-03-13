@@ -33,6 +33,11 @@ struct ContentView: View {
     @State private var questionsAsked = 1
     private let numberOfQuestions = 8
     
+    @State private var rotationDegrees = Array(repeating: CGFloat.zero, count: 3)
+    @State private var opacityAmounts = Array(repeating: 1.0, count: 3)
+    @State private var scales = Array(repeating: 1.0, count: 3)
+    @State private var numberOfTappedFlag: Int?
+    
     // MARK: - UI
     var body: some View {
         ZStack {
@@ -82,6 +87,20 @@ struct ContentView: View {
                         } label: {
                             FlagImage(name: countries[number])
                         }
+                        .rotation3DEffect(
+                            .degrees(rotationDegrees[number]),
+                            axis: (x: 0, y: 1, z: 0)
+                        )
+                        .opacity(opacityAmounts[number])
+                        .scaleEffect(scales[number])
+                        .animation(
+                            (
+                                numberOfTappedFlag == number ?
+                                    (rotationDegrees[number] == .zero ? nil : .spring) :
+                                    (opacityAmounts[number] == 1 ? nil : .linear)
+                            ),
+                            value: numberOfTappedFlag == number ? rotationDegrees[number] : opacityAmounts[number]
+                        )
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -120,6 +139,17 @@ struct ContentView: View {
     
     // MARK: - METHODS
     func flagTapped(_ number: Int) {
+        numberOfTappedFlag = number
+        withAnimation {
+            rotationDegrees[number] += 360
+            for (index, _) in opacityAmounts.enumerated() {
+                if index != number {
+                    opacityAmounts[index] = 0.25
+                    scales[index] = 0.75
+                }
+            }
+        }
+        
         if number == correctAnswer {
             scoreTitle = "Correct!"
             score += 1
@@ -138,6 +168,11 @@ struct ContentView: View {
         countries.shuffle()
         correctAnswer = Int.random(in: 0...2)
         questionsAsked += 1
+        
+        numberOfTappedFlag = nil
+        rotationDegrees = Array(repeating: CGFloat.zero, count: 3)
+        opacityAmounts = Array(repeating: 1.0, count: 3)
+        scales = Array(repeating: 1.0, count: 3)
     }
     
     func reset() {
